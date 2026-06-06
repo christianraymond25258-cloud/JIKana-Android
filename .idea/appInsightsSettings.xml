@@ -10,7 +10,7 @@
                 <ConnectionSetting>
                   <option name="appId" value="com.jikana.app" />
                   <option name="mobileSdkAppId" value="1:850695277832:android:0b48d88951ff42f6ca30bd" />
-                  <option name="projectId" value="jikana-a9ada" />
+                  <option name="projectId" value="kanaflow-a9ada" />
                   <option name="projectNumber" value="850695277832" />
                 </ConnectionSetting>
               </option>

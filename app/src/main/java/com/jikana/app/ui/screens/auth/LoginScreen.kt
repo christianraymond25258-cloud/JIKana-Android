@@ -1,28 +1,80 @@
 package com.jikana.app.ui.screens.auth
 
-import androidx.compose.animation.*
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 import com.jikana.app.navigation.NavRoutes
-import com.jikana.app.ui.theme.*
+import com.jikana.app.ui.theme.BackgroundCard
+import com.jikana.app.ui.theme.BackgroundDark
+import com.jikana.app.ui.theme.BackgroundElevated
+import com.jikana.app.ui.theme.BorderSubtle
+import com.jikana.app.ui.theme.ErrorRed
+import com.jikana.app.ui.theme.SkyBlue
+import com.jikana.app.ui.theme.SkyBlueDark
+import com.jikana.app.ui.theme.TextMuted
+import com.jikana.app.ui.theme.TextOnBlue
+import com.jikana.app.ui.theme.TextPrimary
+import com.jikana.app.ui.theme.TextSecondary
 import com.jikana.app.viewmodel.AuthViewModel
 
 @Composable
@@ -31,11 +83,26 @@ fun LoginScreen(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showEmailForm by remember { mutableStateOf(false) }
 
-    // Navigate on success
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                account.idToken?.let { authViewModel.firebaseAuthWithGoogle(it) }
+            } catch (e: ApiException) {
+                // handled by authState error
+            }
+        }
+    }
+
     LaunchedEffect(authState.isSuccess) {
         if (authState.isSuccess) {
             navController.navigate(NavRoutes.HOME) {
@@ -49,15 +116,15 @@ fun LoginScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Top gradient accent
+        // Top gradient glow
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(350.dp)
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            SkyBlue.copy(alpha = 0.08f),
+                            SkyBlueDark.copy(alpha = 0.15f),
                             Color.Transparent
                         )
                     )
@@ -67,114 +134,102 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Spacer(modifier = Modifier.height(60.dp))
 
             // Logo
-            Text(
-                text = "流",
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Bold,
-                color = SkyBlue
-            )
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(SkyBlueDark, SkyBlue)
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        SkyBlue.copy(alpha = 0.4f),
+                        RoundedCornerShape(24.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "流",
+                    fontSize = 38.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "JIKana",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TextPrimary,
+                letterSpacing = 2.sp
             )
 
             Text(
-                text = "Welcome back",
-                fontSize = 14.sp,
+                text = "Master Japanese Characters",
+                fontSize = 13.sp,
                 color = TextMuted,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Email field
-            KanaTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = "Email",
-                leadingIcon = Icons.Default.Email,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Password field
-            KanaTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = "Password",
-                leadingIcon = Icons.Default.Lock,
-                isPassword = true,
-                passwordVisible = passwordVisible,
-                onPasswordToggle = { passwordVisible = !passwordVisible },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Error message
-            AnimatedVisibility(visible = authState.error != null) {
-                Text(
-                    text = authState.error ?: "",
-                    color = ErrorRed,
-                    fontSize = 13.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Login button
-            Button(
-                onClick = {
-                    authViewModel.clearError()
-                    authViewModel.login(email, password)
-                },
+            // Google Sign-In Button
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SkyBlue,
-                    contentColor = TextOnBlue
-                ),
-                enabled = !authState.isLoading
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White)
+                    .clickable {
+                        val client = authViewModel.getGoogleSignInClient(context)
+                        client.signOut().addOnCompleteListener {
+                            googleSignInLauncher.launch(client.signInIntent)
+                        }
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 if (authState.isLoading) {
                     CircularProgressIndicator(
-                        color = TextOnBlue,
-                        modifier = Modifier.size(22.dp),
+                        color = SkyBlue,
+                        modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(
-                        text = "Sign In",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Google G logo colors
+                        Text(
+                            text = "G",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4285F4)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Continue with Google",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF1F1F1F)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Divider
             Row(
@@ -190,9 +245,167 @@ fun LoginScreen(
                 HorizontalDivider(modifier = Modifier.weight(1f), color = BorderSubtle)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Register link
+            // Email form toggle
+            if (!showEmailForm) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(BackgroundCard)
+                        .border(1.dp, BorderSubtle, RoundedCornerShape(16.dp))
+                        .clickable { showEmailForm = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Continue with Email",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextSecondary
+                        )
+                    }
+                }
+            }
+
+            // Email/Password form
+            AnimatedVisibility(
+                visible = showEmailForm,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email", color = TextMuted) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = null,
+                                tint = SkyBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = SkyBlue,
+                            unfocusedBorderColor = BorderSubtle,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = SkyBlue,
+                            focusedContainerColor = BackgroundCard,
+                            unfocusedContainerColor = BackgroundCard
+                        ),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password", color = TextMuted) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = SkyBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible)
+                                        Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    tint = TextMuted,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible)
+                            VisualTransformation.None else PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = SkyBlue,
+                            unfocusedBorderColor = BorderSubtle,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = SkyBlue,
+                            focusedContainerColor = BackgroundCard,
+                            unfocusedContainerColor = BackgroundCard
+                        ),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Error
+                    AnimatedVisibility(visible = authState.error != null) {
+                        Text(
+                            text = authState.error ?: "",
+                            color = ErrorRed,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            authViewModel.clearError()
+                            authViewModel.login(email, password)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SkyBlue,
+                            contentColor = TextOnBlue
+                        ),
+                        enabled = !authState.isLoading
+                    ) {
+                        if (authState.isLoading) {
+                            CircularProgressIndicator(
+                                color = TextOnBlue,
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Sign In",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Sign up link
             Row(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -212,60 +425,8 @@ fun LoginScreen(
                     }
                 )
             }
+
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
-}
-
-@Composable
-fun KanaTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
-    isPassword: Boolean = false,
-    passwordVisible: Boolean = false,
-    onPasswordToggle: (() -> Unit)? = null,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, color = TextMuted) },
-        leadingIcon = {
-            Icon(
-                imageVector = leadingIcon,
-                contentDescription = null,
-                tint = SkyBlue,
-                modifier = Modifier.size(20.dp)
-            )
-        },
-        trailingIcon = if (isPassword) {
-            {
-                IconButton(onClick = { onPasswordToggle?.invoke() }) {
-                    Icon(
-                        imageVector = if (passwordVisible)
-                            Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = "Toggle password",
-                        tint = TextMuted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        } else null,
-        visualTransformation = if (isPassword && !passwordVisible)
-            PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = keyboardOptions,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = SkyBlue,
-            unfocusedBorderColor = BorderSubtle,
-            focusedTextColor = TextPrimary,
-            unfocusedTextColor = TextPrimary,
-            cursorColor = SkyBlue,
-            focusedContainerColor = BackgroundCard,
-            unfocusedContainerColor = BackgroundCard,
-        ),
-        singleLine = true
-    )
 }

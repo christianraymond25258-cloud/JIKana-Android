@@ -43,35 +43,21 @@ fun SplashScreen(navController: NavController) {
     val subtitleAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Parallel animations
         launch {
-            scale.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(700, easing = EaseOutBack)
-            )
+            scale.animateTo(1f, tween(700, easing = EaseOutBack))
         }
         launch {
-            alpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(500)
-            )
+            alpha.animateTo(1f, tween(500))
         }
         launch {
-            glowScale.animateTo(
-                targetValue = 1.4f,
-                animationSpec = tween(1200, easing = EaseOutCubic)
-            )
+            glowScale.animateTo(1.4f, tween(1200, easing = EaseOutCubic))
         }
 
         delay(600)
+        subtitleAlpha.animateTo(1f, tween(500))
+        delay(1200)
 
-        subtitleAlpha.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(500)
-        )
-
-        delay(1000)
-
+        // Check auth state AFTER animation
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
             navController.navigate(NavRoutes.HOME) {
@@ -90,17 +76,13 @@ fun SplashScreen(navController: NavController) {
             .background(BackgroundDark),
         contentAlignment = Alignment.Center
     ) {
-        // Animated glow
         Box(
             modifier = Modifier
                 .size(280.dp)
                 .scale(glowScale.value)
                 .background(
                     brush = Brush.radialGradient(
-                        colors = listOf(
-                            SkyBlueGlow.copy(alpha = 0.5f),
-                            Color.Transparent
-                        )
+                        colors = listOf(SkyBlueGlow.copy(alpha = 0.5f), Color.Transparent)
                     )
                 )
         )
@@ -117,9 +99,7 @@ fun SplashScreen(navController: NavController) {
                 fontWeight = FontWeight.Bold,
                 color = SkyBlue
             )
-
             Spacer(modifier = Modifier.height(12.dp))
-
             Text(
                 text = "JIKana",
                 fontSize = 34.sp,
@@ -127,9 +107,7 @@ fun SplashScreen(navController: NavController) {
                 color = TextPrimary,
                 letterSpacing = 3.sp
             )
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 text = "Master Japanese Characters",
                 fontSize = 14.sp,

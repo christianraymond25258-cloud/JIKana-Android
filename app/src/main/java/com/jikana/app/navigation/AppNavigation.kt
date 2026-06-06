@@ -1,8 +1,6 @@
 package com.jikana.app.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,24 +8,16 @@ import androidx.navigation.compose.rememberNavController
 import com.jikana.app.ui.screens.SplashScreen
 import com.jikana.app.ui.screens.auth.LoginScreen
 import com.jikana.app.ui.screens.auth.RegisterScreen
-import com.jikana.app.ui.screens.hiragana.HiraganaScreen
-import com.jikana.app.ui.screens.home.HomeScreen
+import com.jikana.app.ui.screens.home.MainHomeScreen
 import com.jikana.app.ui.screens.kanji.KanjiScreen
-import com.jikana.app.ui.screens.katakana.KatakanaScreen
 import com.jikana.app.viewmodel.AuthViewModel
-import com.jikana.app.viewmodel.HomeViewModel
-import com.jikana.app.viewmodel.KanaViewModel
 import com.jikana.app.viewmodel.KanjiViewModel
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
-    val kanaViewModel: KanaViewModel = viewModel()
     val kanjiViewModel: KanjiViewModel = viewModel()
-    val homeViewModel: HomeViewModel = viewModel()
-
-    val homeState by homeViewModel.homeState.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
@@ -49,24 +39,9 @@ fun AppNavigation() {
             )
         }
         composable(NavRoutes.HOME) {
-            HomeScreen(
+            MainHomeScreen(
                 navController = navController,
-                authViewModel = authViewModel,
-                homeViewModel = homeViewModel
-            )
-        }
-        composable(NavRoutes.HIRAGANA) {
-            HiraganaScreen(
-                navController = navController,
-                kanaViewModel = kanaViewModel,
-                currentProgress = homeState.user?.hiraganaProgress ?: 0
-            )
-        }
-        composable(NavRoutes.KATAKANA) {
-            KatakanaScreen(
-                navController = navController,
-                kanaViewModel = kanaViewModel,
-                currentProgress = homeState.user?.katakanaProgress ?: 0
+                authViewModel = authViewModel
             )
         }
         composable(NavRoutes.KANJI) {

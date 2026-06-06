@@ -14,34 +14,13 @@
       },
       "oauth_client": [
         {
-          "client_id": "850695277832-vp2916h1n0lmnfl4f2k9klrcdp9uda8a.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCWZo092VQoYJsTImmhoNiS28rrXqf01rA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "850695277832-vp2916h1n0lmnfl4f2k9klrcdp9uda8a.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:850695277832:android:e3abdfecaa1bdad7ca30bd",
-        "android_client_info": {
-          "package_name": "com.kanaflow.app"
-        }
-      },
-      "oauth_client": [
+          "client_id": "850695277832-62ob7m98t9nq807p7vehocueojaltna7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jikana.app",
+            "certificate_hash": "566403fa185852ec2fe98b1900c635ad9cc245bd"
+          }
+        },
         {
           "client_id": "850695277832-vp2916h1n0lmnfl4f2k9klrcdp9uda8a.apps.googleusercontent.com",
           "client_type": 3
